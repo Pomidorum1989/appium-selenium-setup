@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd">
+<suite name="ANDROID_SETUP" verbose="1">
+
+    <parameter name="platform" value="ANDROID"/>
+    <test name="Android device setup">
+        <classes>
+            <class name="org.dorum.automation.">
+                <methods>
+                    <include name="perfectoAndroidSetup"/>
+                </methods>
+            </class>
+        </classes>
+    </test>
+</suite>

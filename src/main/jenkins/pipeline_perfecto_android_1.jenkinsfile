@@ -1,0 +1,143 @@
+pipeline {
+    agent {
+        kubernetes {
+            idleMinutes 30
+            defaultContainer 'npm'
+            yamlFile 'src/main/jenkins/kubernetes.yaml'
+        }
+    }
+    triggers {
+        cron('TZ=Israel\nH 0 * * *')
+    }
+    options {
+        timeout(time: 360, unit: 'MINUTES')
+        disableConcurrentBuilds()
+        buildDiscarder(logRotator(numToKeepStr: '10', artifactNumToKeepStr: '10'))
+    }
+    parameters {
+        string(      name: 'GIT_BRANCH',            defaultValue: "",      description: 'Select branch')
+        booleanParam(name: 'SETUP',                 defaultValue: true, description: 'Run "SETUP" suite')
+    }
+    tools {
+        maven 'MAVEN_3.8.6'
+        allure '2.22.1'
+    }
+    environment {
+        PERFECTO_TOKEN = credentials('')
+        PERFECTO_FILE = "target/logs/jenkinsParameters.txt"
+        NEXUS_CREDS = credentials('')
+        NEXUS_USER = "$NEXUS_CREDS_USR"
+        NEXUS_PASSWORD = "$NEXUS_CREDS_PSW"
+        SETTINGS_FILE = "src/main/jenkins/settings.xml"
+        PERFECTO_REPORT_URL = "Report URL for perfecto service wasn't generated"
+        PERFECTO_ARTIFACT_VERSION = "Report artifact for perfecto service wasn't generated"
+        ADDRESS_TO = "valentinedorum@gmail.com"
+    }
+    stages {
+        stage('Cloning branch from repository') {
+            steps {
+                echo "Cloning the repository code from ${params.GIT_BRANCH} branch"
+                git credentialsId: '',
+                        url: '',
+                        branch: '${GIT_BRANCH}'
+            }
+        }
+        stage('Resolving maven dependencies') {
+            steps {
+                echo 'Downloading maven dependencies'
+                sh 'mvn -q -s ${SETTINGS_FILE} clean'
+//                sh 'mvn -q -s ${SETTINGS_FILE} dependency:go-offline'
+            }
+        }
+        stage('Tests run') {
+            steps {
+                script {
+                    def content = new StringBuilder()
+                    def location = "src/test/suites/android/"
+                    def debug_location = "src/test/suites/debug/"
+                    if (params.SETUP) {
+                        content.append(location + "ANDROID_SETUP.xml,")
+                    }
+                    //do not forget to update last suite on TestBase afterSuite
+                    content.deleteCharAt(content.length() - 1)
+                    sh "mvn -q -s ${SETTINGS_FILE} test -Dsurefire.suiteXmlFiles=${content}"
+
+                }
+            }
+        }
+    }
+    post {
+        always {
+            script {
+                try {
+                    echo 'Reading perfecto file'
+                    env.FILE = readFile(file: "${PERFECTO_FILE}")
+                    lines = env.FILE.readLines()
+                    env.PERFECTO_REPORT_URL = lines[1]
+                    env.PERFECTO_ARTIFACT_VERSION = lines[2]
+                } catch (Exception e) {
+                    echo "An exception occurred while reading the file ${PERFECTO_FILE}"
+                }
+                perfecto_summary = manager.createSummary("graph.gif")
+                perfecto_summary.appendText("<a href=\"https://cloud.app.perfectomobile.com/library?jobName[0]=${env.JOB_NAME}&" +
+                        "jobNumber[0]=${env.BUILD_NUMBER}\">Perfecto Test Report</a>", false)
+                echo "Releasing device"
+                withCredentials([string(credentialsId: "", variable: "")]) {
+                    final def (String response, int code) =
+                    sh(script: "curl -w' \n%{response_code}' -x http://proxy.com:8080 --request POST --url " +
+                            "'https://cloud.perfectomobile.com/services/handsets/${lines[0]}?operation=" +
+                            "release&securityToken=$TOKEN&admin=false'", returnStdout: true).trim().tokenize("\n")
+                    echo "HTTP response status code: $code"
+                    if (code == 200) {
+                        echo response
+                    } else {
+                        echo "Device ${lines[0]} is already released"
+                    }
+                }
+            }
+            script {
+                echo "Coping Allure categories file"
+                sh 'cp src/main/resources/categories.json target/allure-results/categories.json'
+            }
+            echo "Generating Allure report"
+            allure includeProperties: true,
+                    jdk: '',
+                    results: [[path: 'target/allure-results']],
+                    reportBuildPolicy: 'ALWAYS'
+            script {
+                def props = readProperties file: 'src/main/resources/config_common.properties'
+                currentBuild.displayName = currentBuild.number + "_" + props['android.installed.version'] + "_" + params.GIT_BRANCH
+                echo "currentBuild.displayName - " + currentBuild.displayName
+            }
+            echo "Generating surefire html report"
+            publishHTML([
+                    allowMissing         : true,
+                    alwaysLinkToLastBuild: false,
+                    keepAll              : true,
+                    reportDir            : 'target/surefire-reports/',
+                    reportFiles          : 'emailable-report.html',
+                    reportName           : 'Surefire html report'
+            ])
+        }
+        success {
+            echo "Suite is PASSED"
+            emailext body: '${SCRIPT, template="src/main/jenkins/emailTemplate.groovy"}',
+                    subject: "Automation Android Nightly Job (${currentBuild.displayName}) - Passed",
+                    to: "${ADDRESS_TO}"
+        }
+        unstable {
+            echo "Suite is UNSTABLE"
+            emailext body: '${SCRIPT, template="src/main/jenkins/emailTemplate.groovy"}',
+                    attachmentsPattern: 'target/surefire-reports/emailable-report.html',
+                    subject: "Automation Android Nightly Job (${currentBuild.displayName}) - Unstable",
+                    to: "${ADDRESS_TO}"
+        }
+        failure {
+            echo "Suite is FAILED"
+            emailext body: '${SCRIPT, template="src/main/jenkins/emailTemplate.groovy"}',
+                    attachmentsPattern: 'target/surefire-reports/emailable-report.html',
+                    subject: "Automation Android Nightly Job (${currentBuild.displayName}) - Failed",
+                    to: "${ADDRESS_TO}"
+        }
+    }
+}

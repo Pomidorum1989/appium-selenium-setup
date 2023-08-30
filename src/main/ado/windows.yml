@@ -1,0 +1,127 @@
+# EWindows
+name: windows
+
+trigger:
+  - none
+
+variables:
+  - name: SETTINGS_FILE
+    value: "src/main/jenkins/settings.xml"
+  - group: ARTIFACTORY_CRED
+  - name: PROFILE
+    value: ' '
+
+parameters:
+  - name: IS_AZURE_REPORTING
+    type: boolean
+    default: false
+  - name: SELECT_ALL
+    type: boolean
+    default: true
+  - name: OPTION
+    displayName: 'Select option'
+    type: string
+    default: 'Option 1'
+    values:
+      - Option 1
+      - Option 2
+      - Option 3
+      - Option 4
+  - name: SETUP
+    type: boolean
+    default: false
+
+stages:
+  - stage: test
+    displayName: Test phase on windows
+    pool:
+      name: 'GM CloudWindowsAgents'
+
+    jobs:
+      - job: 'Windows_regression_win'
+        displayName: 'Windows regression 1'
+        timeoutInMinutes: 360
+        steps:
+
+          - task: PowerShell@2
+            displayName: Assembling maven command
+            inputs:
+              targetType: 'inline'
+              script: |
+                $CONTENT = ""
+                $PROFILE = ""
+                $location = "src/test/suites/android/"
+                if ("${{ parameters.SETUP }}" -eq 'True' -or "${{ parameters.SELECT_ALL }}" -eq 'True') {
+                    $CONTENT += "${location}ANDROID_SETUP.xml,"
+                    Write-Output "ANDROID_SETUP suite was selected"
+                }
+
+                $CONTENT = $CONTENT.TrimEnd(",")
+                Write-Output $CONTENT
+                Write-Host "##vso[task.setvariable variable=CONTENT]$CONTENT"
+                Write-Output "Cleaning maven environment and downloading dependencies"
+                mvn -q -s $(SETTINGS_FILE) clean
+
+          - task: Maven@4
+            displayName: Running Maven test phase
+            inputs:
+              mavenPomFile: 'pom.xml'
+              goals: 'test -Dsurefire.suiteXmlFiles=$(CONTENT)'
+              options: '-q -s $(SETTINGS_FILE) -Dbrand=${{ parameters.OPTION }} $(PROFILE)'
+              mavenOptions: '-Xmx4096m'
+              publishJUnitResults: true
+              testResultsFiles: './target/surefire-reports/TEST-*.xml'
+              testRunTitle: 'Windows'
+              javaHomeOption: 'JDKVersion'
+              jdkVersionOption: '1.11'
+              mavenVersionOption: 'Default'
+              mavenAuthenticateFeed: false
+              effectivePomSkip: false
+              sonarQubeRunAnalysis: false
+          - task: PublishBuildArtifacts@1
+            displayName: Attaching email report
+            inputs:
+              PathtoPublish: '$(Build.SourcesDirectory)/target/surefire-reports/'
+              ArtifactName: 'emailable-report.html'
+              publishLocation: 'Container'
+          - task: PowerShell@2
+            displayName: Generating email body
+            inputs:
+              targetType: 'inline'
+              script: |
+                if ($env:Agent_JobStatus -eq 'Succeeded') {
+                    Write-Host "##vso[task.setvariable variable=emailBody]Windows regression 1 succeeded"
+                } else {
+                    Write-Host "##vso[task.setvariable variable=emailBody]Windowst regression 1 failed"
+                }
+
+          - task: PowerShell@2
+            displayName: Releasing Perfecto device
+            env:
+              TOKEN: $(token.name)
+            inputs:
+              targetType: 'inline'
+              script: |
+                try {
+                  $DEVICE_ID = Get-Content -First 1 "$(Build.SourcesDirectory)/target/logs/jenkinsParameters.txt"
+                  $response = Invoke-WebRequest -Proxy 'http://proxy.com:8080' -Method POST -Uri "https://cloud.perfectomobile.com/services/handsets/$DEVICE_ID?operation=release&securityToken=$env:TOKEN&admin=false"
+                  $code = $response.StatusCode
+                  $response_body = $response.Content
+
+                  Write-Output "HTTP response status code $code"
+                  if ($code -eq 200) {
+                    Write-Output $response_body
+                  }
+                } catch {
+                Write-Output "Device $DEVICE_ID is already released"
+                }
+
+          - task: SendEmailNotification@2
+            displayName: Sending the email
+            inputs:
+              tolist: ''
+              emailSubject: '$(Build.BuildNumber)_$(Build.DefinitionName)'
+              EmailBodyType: 'textBody'
+              textBody: '$(emailBody)'
+              IncludeAttachment: true
+              attachmentPath: '$(Build.SourcesDirectory)/target/surefire-reports/emailable-report.html'

@@ -1,0 +1,144 @@
+# Linux tests
+name: Linux Automation Android 1
+
+trigger:
+  - none
+
+variables:
+  - name: SETTINGS_FILE
+    value: "src/main/jenkins/settings.xml"
+  - group: ARTIFACTORY_CRED
+  - name: PROFILE
+    value: ' '
+
+parameters:
+- name: SELECT_ALL
+  type: boolean
+  default: true
+- name: OPTION
+  displayName: 'Select the Option'
+  type: string
+  default: 'OPTION'
+  values:
+    - OPTION
+    - OPTION 1
+    - OPTION 2
+    - OPTION 3
+- name: SETUP
+  type: boolean
+  default: false
+
+stages:
+- stage: test
+  displayName: Test phase
+  pool:
+    name: 'GM CloudLinuxAgents'
+    # name: 'GM CloudOSXAgents'
+
+  jobs:
+  - job: 'Linux_regression_1'
+    displayName: 'Linux regression 1'
+    timeoutInMinutes: 360
+    steps:
+    - task: Bash@3
+      displayName: Maven dependencies download
+      inputs:
+        targetType: 'inline'
+        script: |
+                  CONTENT=""
+                  PROFILE=" "
+                  location="src/test/suites/android/"
+                  if [[ '${{ parameters.SETUP }}' == 'True' || '${{ parameters.SELECT_ALL }}' == 'True' ]];
+                  then
+                      CONTENT="${CONTENT}${location}ANDROID_SETUP.xml,"
+                      echo $CONTENT
+                      echo ANDROID_SETUP suite was selected
+                  fi
+
+                  CONTENT="${CONTENT%,}"
+                  echo "##vso[task.setvariable variable=CONTENT]$CONTENT"
+                  mvn -q -s $(SETTINGS_FILE) clean
+    - task: CmdLine@2
+      inputs:
+        script: |
+          echo "Structure of work folder of this pipeline:"
+          tree $(Agent.WorkFolder)\1 /f
+          echo "Build.ArtifactStagingDirectory:"
+          echo "$(Build.ArtifactStagingDirectory)"
+          echo "Build.BinariesDirectory:"
+          echo "$(Build.BinariesDirectory)"
+          echo "Build.SourcesDirectory:"
+          echo "$(Build.SourcesDirectory)"
+          ls -la .
+    - task: Maven@4
+      displayName: Running Maven
+      inputs:
+        mavenPomFile: 'pom.xml'
+        goals: 'test -Dsurefire.suiteXmlFiles=$(CONTENT)'
+        options: '-X -s $(SETTINGS_FILE) -Dbrand=${{ parameters.OPTION }} $(PROFILE)'
+        mavenOptions: '-Xmx4096m'
+        publishJUnitResults: false
+        testResultsFiles: './target/surefire-reports/TEST-*.xml'
+        testRunTitle: 'Linux'
+        javaHomeOption: 'JDKVersion'
+        jdkVersionOption: '1.11'
+        mavenVersionOption: 'Default'
+        mavenAuthenticateFeed: false
+        effectivePomSkip: false
+        sonarQubeRunAnalysis: false
+    - task: Bash@3
+      displayName: Building the message
+      inputs:
+        targetType: 'inline'
+        script: |
+          if [ '$(Agent.JobStatus)' == 'Succeeded' ];
+          then
+            echo "##vso[task.setvariable variable=emailBody]Linux regression 1 succeeded"
+          else
+            echo "##vso[task.setvariable variable=emailBody]Linux regression 1 failed"
+          fi
+
+    - task: Bash@3
+      displayName: Releasing device
+      env:
+        TOKEN: $(token.name)
+      inputs:
+        targetType: 'inline'
+        script: |
+          DEVICE_ID=$(head -n 1 "$(Build.SourcesDirectory)/target/logs/jenkinsParameters.txt")
+          response=$(curl -x http://proxy.com:8080 -w '\n%{response_code}' --request POST --url "https://cloud.perfectomobile.com/services/handsets/$DEVICE_ID?operation=release&securityToken=$TOKEN&admin=false")
+          code=$(echo "$response" | tail -n 1)
+          response_body=$(echo "$response" | sed '$d')
+          echo "HTTP response status code: $code"
+          if [ "$code" -eq 200 ];
+          then
+              echo "$response_body"
+          else
+              echo "Device $DEVICE_ID is already released"
+          fi
+
+    - task: CmdLine@2
+      inputs:
+        script: |
+          echo "Structure of work folder of this pipeline:"
+          tree $(Agent.WorkFolder)\1 /f
+          echo "Build.ArtifactStagingDirectory:"
+          echo "$(Build.ArtifactStagingDirectory)"
+          echo "Build.BinariesDirectory:"
+          echo "$(Build.BinariesDirectory)"
+          echo "Build.SourcesDirectory:"
+          echo "$(Build.SourcesDirectory)"
+          ls -la ./target/surefire-reports/
+          echo $$
+          ps -ef
+          du -hs ./target/surefire-reports/
+          cat /proc/cpuinfo
+    - task: SendEmailNotification@2
+      displayName: Sending the email
+      inputs:
+        tolist: ''
+        emailSubject: '$(Build.BuildNumber)_$(Build.DefinitionName)'
+        EmailBodyType: 'textBody'
+        textBody: '$(emailBody)'
+        IncludeAttachment: true
+        attachmentPath: '$(Build.SourcesDirectory)/target/surefire-reports/emailable-report.html'

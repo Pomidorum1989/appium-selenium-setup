@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration>
+    <Appenders>
+        <Console name="Console">
+            <PatternLayout pattern="%highlight{%d{DATE} %-5level} [%t] - %m%n" disableAnsi="false"/>
+        </Console>
+        <Console name="ConsoleAppender" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d [%t] %-5level %logger{36} - %msg%n%throwable"/>
+        </Console>
+        <Console name="StepConsole">
+            <PatternLayout pattern="%highlight{%d{DATE} %-5level} [%t] - %m%n" disableAnsi="false"/>
+        </Console>
+        <File name="File" fileName="./target/logs/TestLogs.log">
+            <PatternLayout>
+                <Pattern>%d{DATE} %-5level [%t] - %m%n</Pattern>
+            </PatternLayout>
+        </File>
+<!--        <ReportPortalLog4j2Appender name="ReportPortalAppender">-->
+<!--            <PatternLayout-->
+<!--                    pattern="%d [%t] %-5level %logger{36} - %msg%n%throwable"/>-->
+<!--        </ReportPortalLog4j2Appender>-->
+    </Appenders>
+    <Loggers>
+        <Root level="DEBUG">
+            <AppenderRef ref="Console" level="INFO"/>
+            <AppenderRef ref="File"/>
+        </Root>
+<!--        <Logger name="com.epam.reportportal" level="INFO" additivity="false">-->
+<!--            <AppenderRef ref="ConsoleAppender"/>-->
+<!--            <AppenderRef ref="ReportPortalAppender"/>-->
+<!--        </Logger>-->
+<!--        <Logger name="binary_data_logger" level="DEBUG" additivity="false">-->
+<!--            <AppenderRef ref="ReportPortalAppender"/>-->
+<!--        </Logger>-->
+    </Loggers>
+    <Scripts>
+        <Script name="FoldableMarker" language="JavaScript">
+            <![CDATA[
+                log4j.MarkerManager.getMarker("FOLDABLE_MARKER");
+            ]]>
+        </Script>
+    </Scripts>
+</Configuration>
