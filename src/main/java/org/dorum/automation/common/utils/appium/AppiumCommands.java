@@ -11,19 +11,16 @@ import io.appium.java_client.ios.IOSDriver;
 import io.appium.java_client.touch.offset.PointOption;
 import io.qameta.allure.Step;
 import lombok.SneakyThrows;
+import lombok.extern.log4j.Log4j2;
 import org.apache.commons.io.FileUtils;
-import org.dorum.automation.common.consts.CapabilityName;
 import org.dorum.automation.common.driver.AbstractDriverManager;
 import org.dorum.automation.common.driver.WebDriverContainer;
-import org.dorum.automation.common.utils.ConfigProperties;
-import org.dorum.automation.common.utils.DataUtils;
-import org.dorum.automation.common.utils.Log;
-import org.dorum.automation.common.utils.TextUtils;
+import org.dorum.automation.common.utils.*;
 import org.dorum.automation.common.utils.enums.MobileContext;
 import org.dorum.automation.common.utils.enums.PerformanceData;
 import org.dorum.automation.common.utils.enums.ProjectConfig;
 import org.dorum.automation.common.utils.enums.TitleName;
-import org.dorum.automation.common.utils.perfecto.CustomSoftAssert;
+import org.dorum.automation.perfecto.CapabilityName;
 import org.openqa.selenium.*;
 import org.openqa.selenium.remote.SessionId;
 import org.openqa.selenium.support.events.EventFiringWebDriver;
@@ -34,6 +31,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.dorum.automation.common.utils.MathUtils.trimDecimal;
 
+@Log4j2
 public class AppiumCommands {
 
     private static final List<String[]> PERFORMANCE_DATA = new ArrayList<>();
@@ -45,17 +43,17 @@ public class AppiumCommands {
     }
 
     public static void activateApp(String bundlePackageId) {
-        Log.info("Appium Commands: activating application: %s", bundlePackageId);
+        log.info("Appium Commands: activating application: {}", bundlePackageId);
         try {
             appiumDriver().activateApp(bundlePackageId);
         } catch (Exception e) {
-            Log.warn("FAILED - unable to activate package/bungle ID: %s", bundlePackageId, e);
+            log.warn("FAILED - unable to activate package/bungle ID: {}", bundlePackageId, e);
         }
     }
 
     public static boolean isApplicationInstalled(String bundleId) {
         if (appiumDriver().isAppInstalled(bundleId)) {
-            return Log.info("%s is already installed", bundleId);
+            log.info("{} is already installed", bundleId);
         }
         return false;
     }
@@ -63,33 +61,33 @@ public class AppiumCommands {
     @Step("Step >> Appium Commands: Terminate Application")
     public static void terminateApp(String bundleId) {
         try {
-            Log.info("Appium Commands: terminating application");
+            log.info("Appium Commands: terminating application");
             if (appiumDriver().terminateApp(bundleId)) {
-                Log.info("Application with package/bungle ID: '%s' is terminated", bundleId);
+                log.info("Application with package/bungle ID: '{}' is terminated", bundleId);
             }
         } catch (Exception e) {
-            Log.warn("FAILED - unable to terminate package/bungle ID: %s", bundleId, e);
+            log.warn("FAILED - unable to terminate package/bungle ID: {}", bundleId, e);
         }
     }
 
     @Step("Step >> Appium Commands: Start Activity")
     public static void startActivity(String packageId, String activity) {
         try {
-            Log.info("Appium Commands: starting activity '%s' for package '%s'", activity, packageId);
+            log.info("Appium Commands: starting activity '{}' for package '{}'", activity, packageId);
             androidDriver().startActivity(new Activity(packageId, activity));
-            Log.info("Activity %s is started", activity);
+            log.info("Activity {} is started", activity);
         } catch (Exception e) {
-            Log.exception("FAILED - unable to start activity '%s' in the package: %s\n%s", activity, packageId, e);
+            log.error("FAILED - unable to start activity '{}' in the package: {}\n{}", activity, packageId, e);
         }
     }
 
     public static void startActivityWithWait(String packageId, String activity) {
-        Log.info("Appium Commands: starting activity (with wait)");
+        log.info("Appium Commands: starting activity (with wait)");
         androidDriver().startActivity(
                 new Activity(packageId, activity)
                         .setAppWaitPackage(packageId)
                         .setAppWaitActivity(activity));
-        Log.info("Activity with wait %s is started", activity);
+        log.info("Activity with wait {} is started", activity);
     }
 
     @Step("Step >> Appium Commands: Launch Application")
@@ -97,51 +95,47 @@ public class AppiumCommands {
         if (AppiumCommands.isCapabilityActive(CapabilityName.APP_PACKAGE)
                 || AppiumCommands.isCapabilityActive(CapabilityName.BUNDLE_ID)) {
             try {
-                Log.info("Appium Commands: launching application");
+                log.info("Appium Commands: launching application");
                 appiumDriver().launchApp();
-                Log.info("Launched the application under the test");
+                log.info("Launched the application under the test");
             } catch (Exception e) {
-                Log.exception("FAILED - unable to launch the application\n%s", e);
+                log.error("FAILED - unable to launch the application\n{}", e);
             }
         } else {
-            if (AbstractDriverManager.isAndroid()) {
-                activateApp("packageName");
-            } else {
-                activateApp("packageName");
-            }
+            activateApp("packageName");
         }
     }
 
     @Step("Step >> Appium Commands: Close Application")
     public static void closeApp() {
         try {
-            Log.info("Appium Commands: closing application");
+            log.info("Appium Commands: closing application");
             appiumDriver().closeApp();
-            Log.info("Closed the application under the test");
+            log.info("Closed the application under the test");
         } catch (Exception e) {
-            Log.warn("FAILED - unable to close the application\n%s", e);
+            log.warn("FAILED - unable to close the application\n{}", e);
         }
     }
 
     @Step("Step >> Appium Commands: Remove Application")
     public static void removeApp(String appOrBundleId) {
         try {
-            Log.info("Appium Commands: removing application %s", appOrBundleId);
+            log.info("Appium Commands: removing application {}", appOrBundleId);
             appiumDriver().removeApp(appOrBundleId);
-            Log.info("Removed the application (%s) under the test", appOrBundleId);
+            log.info("Removed the application ({}) under the test", appOrBundleId);
         } catch (Exception e) {
-            Log.warn("FAILED - unable to remove the application (%s)\n%s", appOrBundleId, e);
+            log.warn("FAILED - unable to remove the application ({})\n{}", appOrBundleId, e);
         }
     }
 
     @Step("Step >> Appium Commands: Reset Application")
     public static void resetApp() { // Also clears cache and all data
         try {
-            Log.info("Appium Commands: resetting application");
+            log.info("Appium Commands: resetting application");
             appiumDriver().resetApp();
-            Log.info("Done - reset the application under the test");
+            log.info("Done - reset the application under the test");
         } catch (Exception e) {
-            Log.warn("FAILED - unable to reset the application\n%s", e);
+            log.warn("FAILED - unable to reset the application\n{}", e);
         }
     }
 
@@ -171,30 +165,30 @@ public class AppiumCommands {
 
     public static String getCurrentActivity() {
         String currentActivity = androidDriver().currentActivity();
-        Log.info("Current activity: %s", currentActivity);
+        log.info("Current activity: {}", currentActivity);
         return currentActivity;
     }
 
     public static boolean waitForActivityIsLoaded(long timeoutMilliSeconds, String activity) {
-        Log.info("Appium Commands: waiting for activity '%s' load", activity);
+        log.info("Appium Commands: waiting for activity '{}' load", activity);
         boolean isLoaded = false;
         if (AbstractDriverManager.isAndroid()) {
             long startTime = System.currentTimeMillis();
             while ((System.currentTimeMillis() - startTime) < timeoutMilliSeconds) {
                 if (Objects.equals(getCurrentActivity(), activity)) {
                     isLoaded = true;
-                    Log.info(activity + " was loaded");
+                    log.info("{} was loaded", activity);
                     break;
                 }
             }
         } else {
-            Log.warn("The command is not supported by iOS");
+            log.warn("The command is not supported by iOS");
         }
         return isLoaded;
     }
 
     public static Set<String> getContextHandles() {
-        Log.info("Appium Commands: getting context handles");
+        log.info("Appium Commands: getting context handles");
         Set<String> handles = new LinkedHashSet<>();
         int attempt = 0;
         while (attempt < 2) {
@@ -203,57 +197,60 @@ public class AppiumCommands {
                 break;
             } catch (Exception e) {
                 attempt++;
-                Log.warn("FAILED - unable to get context handles\n%s", e);
+                log.warn("FAILED - unable to get context handles\n{}", e);
             }
         }
         return handles;
     }
 
     public static boolean setContext(MobileContext context) {
-        Log.info("Appium Commands: setting context");
+        log.info("Appium Commands: setting context");
         String contextValue = context.getContextValue();
         if (context.equals(MobileContext.WEBVIEW) && AbstractDriverManager.isIos()) {
-            contextValue = getIosWebviewContext(TitleName.APP_TITLE);
+            contextValue = getIosWebViewContext(TitleName.APP_TITLE);
             if (contextValue == null) {
-                return Log.warn("FAILED - get iOS WebView context: NULL");
+                log.warn("FAILED - get iOS WebView context: NULL");
+                return false;
             }
         }
         try {
             appiumDriver().context(contextValue);
         } catch (Exception e) {
-            return Log.warn("FAILED - set context\n%s", e);
+            log.warn("FAILED - set context\n{}", e);
+            return false;
         }
-        return Log.info("Switched context, current context is %s", appiumDriver().getContext());
+        log.info("Switched context, current context is {}", appiumDriver().getContext());
+        return true;
     }
 
     public static String getCurrentContext() {
         String context = "";
         try {
-            Log.info("Appium Commands: getting current context");
+            log.info("Appium Commands: getting current context");
             context = appiumDriver().getContext();
-            Log.info("Current context is: %s", context);
+            log.info("Current context is: {}", context);
         } catch (Exception e) {
-            Log.warn("FAILED - unable to get current context\n%s", e);
+            log.warn("FAILED - unable to get current context\n{}", e);
         }
         return context;
     }
 
     public static String getWebViewTitleName() {
-        Log.info("Appium Commands: getting webView title");
+        log.info("Appium Commands: getting webView title");
         String result = "";
         int attempt = 0;
         while (attempt < 1) {
             try {
                 result = WebDriverContainer.getDriver().getTitle();
                 if (!result.isEmpty()) {
-                    Log.info("Current webView title is: %s", result);
+                    log.info("Current webView title is: {}", result);
                 } else {
-                    Log.warn("Title name is empty");
+                    log.warn("Title name is empty");
                 }
                 break;
             } catch (Exception e) {
                 attempt++;
-                Log.warn("WebView title name is not found\n%s", e);
+                log.warn("WebView title name is not found\n{}", e);
             }
         }
         return result;
@@ -262,25 +259,27 @@ public class AppiumCommands {
     public static Set<String> getWindowHandles() {
         Set<String> result = new HashSet<>();
         try {
-            Log.info("Appium Commands: getting window handles");
+            log.info("Appium Commands: getting window handles");
             result = WebDriverContainer.getDriver().getWindowHandles();
-//            result.forEach(handle -> Log.info("Available handles: %s", handle));
+//            result.forEach(handle -> log.info("Available handles: {}", handle));
         } catch (Exception e) {
-            Log.warn("Windows handles are not found\n%s", e);
+            log.warn("Windows handles are not found\n{}", e);
         }
         return result;
     }
 
     @Step("Step >> Appium Commands: Switch Context (if relevant)")
     public static boolean switchContext(MobileContext context) {
-        Log.info("Appium Commands: switching context (if relevant) to (%s)", context);
+        log.info("Appium Commands: switching context (if relevant) to ({})", context);
         try {
             return setContext(context);
         } catch (Exception e) {
             if (e.getMessage().contains("Chrome version")) {
-                return Log.warn("ChromeDriver update is needed\n%s", e);
+                log.warn("ChromeDriver update is needed\n{}", e);
+                return false;
             } else {
-                return Log.warn("No such context found\n%s", e);
+                log.warn("No such context found\n{}", e);
+                return false;
             }
         }
     }
@@ -288,20 +287,23 @@ public class AppiumCommands {
     @SneakyThrows
     @Step("Step >> Appium Commands: Switch Context (if relevant) by title")
     public static boolean switchContextUsingTitle(TitleName title) {
-        Log.info("Appium Commands: switching context (if relevant) by title (%s)", title);
+        log.info("Appium Commands: switching context (if relevant) by title {}", title);
         if (getCurrentContext().contains(MobileContext.WEBVIEW.getContextName() + "_")
                 && Objects.equals(getWebViewTitleName(), title.getTitle())) {
-            return Log.info("The handle - %s is already set", title.getTitle());
+                log.info("The handle - {} is already set", title.getTitle());
+                return true;
         } else {
             if (switchContext(MobileContext.WEBVIEW)) {
                 for (String windowHandle : getWindowHandles()) {
                     try {
                         switchToWindow(windowHandle);
                         if (getWebViewTitleName().equals(title.getTitle())) {
-                            return Log.info("The handle - %s is found", title.getTitle());
+                            log.info("The handle - {} is found", title.getTitle());
+                            return true;
                         }
                     } catch (Exception e) {
-                        Log.warn("Window is not found\n%s", e);
+                        log.warn("Window is not found\n{}", e);
+                        return false;
                     }
                 }
             }
@@ -311,11 +313,11 @@ public class AppiumCommands {
 
     @Step("Step >> Appium Commands: Switch context by title")
     public static boolean switchContextByTitle(TitleName title) {
-        Log.info("Appium Commands: switching context by title (%s)", title);
+        log.info("Appium Commands: switching context by title {})", title);
         if (!AbstractDriverManager.isAndroid()
                 && Objects.equals(ConfigProperties.getProperty(ProjectConfig.PERFECTO_STATUS), Boolean.TRUE.toString())
                 && isCapabilityActive(CapabilityName.FULL_CONTEXT_LIST)) {
-            return getIosWebviewContext(title) != null;
+            return getIosWebViewContext(title) != null;
         } else {
             if (ConfigProperties.getProperty(ProjectConfig.SESSION_ID) == null ||
                     ConfigProperties.getProperty(ProjectConfig.SESSION_ID).isEmpty()) {
@@ -327,25 +329,28 @@ public class AppiumCommands {
     }
 
     @SneakyThrows
-    public static String getIosWebviewContext(TitleName titleName) {
-        Map<Object, String> map;
-        Log.info("Appium Commands: getting iOS context");
+    public static String getIosWebViewContext(TitleName titleName) {
+        log.info("Appium Commands: getting iOS context");
         for (Object contextHandle : getContextHandles()) {
-            map = (Map<Object, String>) contextHandle;
-            if (map.get("id").contains(MobileContext.WEBVIEW.getContextName())) {
-                if (Objects.equals(map.get("title"), titleName.getTitle())) {
-                    return map.get("id");
+            if (contextHandle instanceof Map) {
+                Map<?, ?> map = (Map<?, ?>) contextHandle;
+                if (map.containsKey("id") && map.containsKey("title")) {
+                    String id = (String) map.get("id");
+                    String title = (String) map.get("title");
+                    if (id.contains(MobileContext.WEBVIEW.getContextName()) && Objects.equals(title, titleName.getTitle())) {
+                        return id;
+                    }
                 }
             }
         }
-        Log.warn("FAILED - get iOS WebView context: %s", titleName);
+        log.warn("FAILED - get iOS WebView context: {}", titleName);
         return null;
     }
 
     public static void switchToWindow(String windowHandle) {
-        Log.info("Appium Commands: setting window context");
+        log.info("Appium Commands: setting window context");
         WebDriverContainer.getDriver().switchTo().window(windowHandle);
-        Log.info("Switched to: %s", windowHandle);
+        log.info("Switched to: {}", windowHandle);
     }
 
     public static void switchIFrameByWebElement(WebElement webElement) {
@@ -358,7 +363,7 @@ public class AppiumCommands {
     }
 
     public static Dimension getScreenSize() {
-        Log.info("Appium Commands: getting screen size");
+        log.info("Appium Commands: getting screen size");
         return WebDriverContainer.getDriver().manage().window().getSize();
     }
 
@@ -367,10 +372,10 @@ public class AppiumCommands {
     }
 
     public static void hideKeyBoard() {
-        Log.info("Appium Commands: hiding keyboard");
+        log.info("Appium Commands: hiding keyboard");
         switchContext(MobileContext.NATIVE);
         appiumDriver().hideKeyboard();
-        Log.info("Keyboard is hidden");
+        log.info("Keyboard is hidden");
     }
 
     public static void setScriptTimeout(int seconds) {
@@ -382,12 +387,12 @@ public class AppiumCommands {
         try {
             // NOTE: findElementByAndroidUIAutomator - working with double quotes >> "<visibleText>"!!!
             String locator = String.format("new UiScrollable(new UiSelector().scrollable(true).instance(0))"
-                                                   + ".scrollIntoView(new UiSelector().textContains(\"%s\").instance(0))", visibleText);
-            Log.info("Appium Commands: Scrolling to visible text: %s\nLocator: %s", visibleText, locator);
+                    + ".scrollIntoView(new UiSelector().textContains(\"%s\").instance(0))", visibleText);
+            log.info("Appium Commands: Scrolling to visible text: {}\nLocator: {}", visibleText, locator);
             element = (androidDriver()).findElementByAndroidUIAutomator(locator);
-            Log.info("Scrolled to visible text: %s", visibleText);
+            log.info("Scrolled to visible text: {}", visibleText);
         } catch (Exception e) {
-            Log.warn("Visible text is not found: %s\n%s", visibleText, e);
+            log.warn("Visible text is not found: {}\n{}", visibleText, e);
         }
         return element;
     }
@@ -398,9 +403,9 @@ public class AppiumCommands {
 
     @SneakyThrows
     public static void tapByCoordinates(int x, int y) {
-        Log.info("Appium Commands: taping by coordinates - x:%s y:%s", x, y);
+        log.info("Appium Commands: taping by coordinates - x:{} y:{}", x, y);
         new TouchAction<>(appiumDriver()).tap(PointOption.point(x, y)).perform();
-        Log.info("Tapped on coordinates - x:%s y:%s", x, y);
+        log.info("Tapped on coordinates - x:{} y:{}", x, y);
     }
 
     @SneakyThrows
@@ -410,42 +415,42 @@ public class AppiumCommands {
             touchAction.tap(PointOption.point(x, y));
         }
         touchAction.perform();
-        Log.info("Tapped on coordinates - x:%s y:%s", x, y);
+        log.info("Tapped on coordinates - x:{} y:{}", x, y);
     }
 
     public static void tapByCoordinatesInSequence(List<Integer> taps) {
-        Log.info("Appium Commands: taping by coordinates in sequence");
+        log.info("Appium Commands: taping by coordinates in sequence");
         TouchAction<?> touchAction = new TouchAction<>(androidDriver());
         if (taps.size() % 2 == 0) {
             for (int i = 0; i < taps.size() - 1; i = i + 2) {
                 touchAction.tap(PointOption.point(taps.get(i), taps.get(i + 1)));
-                Log.info("Will tap on coordinates - x:%s y:%s", taps.get(i), taps.get(i + 1));
+                log.info("Will tap on coordinates - x:{} y:{}", taps.get(i), taps.get(i + 1));
             }
             touchAction.perform();
-            Log.info("Tapped on listed coordinates");
+            log.info("Tapped on listed coordinates");
         } else {
-            Log.warn("Incorrect amount of taps: %s", taps.size());
+            log.warn("Incorrect amount of taps: {}", taps.size());
         }
     }
 
     public static void tapImmediatelyByCoordinatesInSequence(List<Integer> taps) {
-        Log.info("Appium Commands: taping immediately by coordinates in sequence");
+        log.info("Appium Commands: taping immediately by coordinates in sequence");
         if (taps.size() % 2 == 0) {
             for (int i = 0; i < taps.size() - 1; i = i + 2) {
                 tapByCoordinates(taps.get(i), taps.get(i + 1));
             }
         } else {
-            Log.warn("Incorrect amount of taps: %s", taps.size());
+            log.warn("Incorrect amount of taps: {}", taps.size());
         }
     }
 
     @SneakyThrows
     public static void tapCenterOfScreen() {
-        Log.info("Appium Commands: taping center of screen");
+        log.info("Appium Commands: taping center of screen");
         int x = AppiumCommands.getScreenSize().getWidth() / 2;
         int y = AppiumCommands.getScreenSize().getHeight() / 2;
         new TouchAction<>(appiumDriver()).tap(PointOption.point(x, y)).perform();
-        Log.info("Tapped center of screen (coordinates - x:%s y:%s)", x, y);
+        log.info("Tapped center of screen (coordinates - x:{} y:{})", x, y);
     }
 
     public void swipeByCoordinates(int x, int y) {
@@ -454,11 +459,11 @@ public class AppiumCommands {
                 .press(PointOption.point(x, y))
                 .moveTo(PointOption.point(x, y))
                 .release();
-        Log.info("Swiped on coordinates - x:%s y:%s", x, y);
+        log.info("Swiped on coordinates - x:{} y:{}", x, y);
     }
 
     public static File takeScreenshot(String downloadsFolder, String fileName) {
-        Log.info("Appium Commands: taking screenshot");
+        log.info("Appium Commands: taking screenshot");
         String sep = File.separator;
         String screenshotFileName = (fileName + ".png")
                 .replace(" ", "_")
@@ -471,32 +476,32 @@ public class AppiumCommands {
 //            Utils.compressImage(scrFile.getAbsolutePath(), imageFile.getAbsolutePath(), 0.0f);
             FileUtils.copyFile(scrFile, imageFile);
             String path = TextUtils.format(" {0}{1}{2}{1}{3}", System.getProperty("user.dir"),
-                                           sep, downloadsFolder.replace("/", sep), screenshotFileName);
-            Log.info("Screenshot is created in:\n%s", path);
+                    sep, downloadsFolder.replace("/", sep), screenshotFileName);
+            log.info("Screenshot is created in:\n{}", path);
         } catch (Exception e) {
-            Log.warn("FAILED - take screenshot: %s\n%s", screenshotFileName, e);
+            log.warn("FAILED - take screenshot: {}\n{}", screenshotFileName, e);
         }
         return imageFile;
     }
 
     public static void clickAndroidSystemBtn(AndroidKey key, String comment) {
-        Log.info("Appium Commands: clicking Android system button %s", key);
+        log.info("Appium Commands: clicking Android system button {}", key);
         switchContext(MobileContext.NATIVE);
         try {
             androidDriver().pressKey(new KeyEvent(key));
-            Log.info(comment);
+            log.info(comment);
         } catch (Exception e) {
-            Log.warn("FAILED - unable to activate system key: %s\n%s", key.name(), e);
+            log.warn("FAILED - unable to activate system key: {}\n{}", key.name(), e);
         }
     }
 
     private static List<List<Object>> getPerformanceData(PerformanceData.PerformanceDataType types, int dataReadTimeout) {
-        Log.info("Appium Commands: getting performance data");
+        log.info("Appium Commands: getting performance data");
         List<List<Object>> data = new ArrayList<>();
         try {
             data = androidDriver().getPerformanceData("app package", types.getValue(), dataReadTimeout);
         } catch (Exception e) {
-            Log.warn("FAILED - unable to get %s data\n%s", types.getValue(), e);
+            log.warn("FAILED - unable to get {} data\n{}", types.getValue(), e);
         }
         return data;
     }
@@ -522,7 +527,7 @@ public class AppiumCommands {
     }
 
     public static void navigateBack() {
-        Log.info("Appium Commands: executing 'Back' action by Android Driver (Selenium level)");
+        log.info("Appium Commands: executing 'Back' action by Android Driver (Selenium level)");
         WebDriverContainer.getDriver().navigate().back();
     }
 
@@ -531,13 +536,13 @@ public class AppiumCommands {
     }
 
     public static ApplicationState queryAppState(String bundleID) {
-        Log.info("Appium Commands: querying application state");
+        log.info("Appium Commands: querying application state");
         return appiumDriver().queryAppState(bundleID);
     }
 
     @Step("Step >> Appium Commands: Record Performance data")
     public static void recordPerformanceData() {
-        Log.info("Appium Commands: recording performance data results");
+        log.info("Appium Commands: recording performance data results");
         String context = getCurrentContext();
         switchContext(MobileContext.NATIVE);
         HashMap<String, Double> infoMemory = getMemoryData();
@@ -557,7 +562,7 @@ public class AppiumCommands {
             networkTbValue = infoNetwork.get(PerformanceData.NetworkData.TB.getValue());
             batteryValue = infoBattery.get(PerformanceData.BatteryData.POWER.getValue());
         } catch (Exception e) {
-            Log.warn("FAILED - unable to record performance data\n", e);
+            log.warn("FAILED - unable to record performance data\n", e);
         }
         if (cpuUserValue == null) cpuUserValue = 0.0;
         if (cpuKernelValue == null) cpuKernelValue = 0.0;
@@ -569,16 +574,16 @@ public class AppiumCommands {
                 trimDecimal(cpuUserValue), trimDecimal(cpuKernelValue), trimDecimal(memoryValue),
                 trimDecimal(networkRbValue), trimDecimal(networkTbValue), trimDecimal(batteryValue),
                 new Date().toString()});
-        Log.info("Performance data -> | CPU(User): %s%  | CPU(Kernel): %s%  | Memory: %s kb"
-                         + " | Network Rx: %s kb | Network Tx: %s kb | Battery: %s%  |",
-                 trimDecimal(cpuUserValue), trimDecimal(cpuKernelValue), trimDecimal(memoryValue),
-                 trimDecimal(networkRbValue), trimDecimal(networkTbValue), trimDecimal(batteryValue));
+        log.info("Performance data -> | CPU(User): {}%  | CPU(Kernel): {}%  | Memory: {} kb"
+                        + " | Network Rx: {} kb | Network Tx: {} kb | Battery: {}%  |",
+                trimDecimal(cpuUserValue), trimDecimal(cpuKernelValue), trimDecimal(memoryValue),
+                trimDecimal(networkRbValue), trimDecimal(networkTbValue), trimDecimal(batteryValue));
     }
 
     @SneakyThrows
     @Step("Step >> Appium Commands: Save Performance data results")
     public static void stopCpuDataRecording(String testName) {
-        Log.info("Appium Commands: finishing CPU metrics recording (and save results) for test %s", testName);
+        log.info("Appium Commands: finishing CPU metrics recording (and save results) for test {}", testName);
         File file = DataUtils.writeToCSV(PERFORMANCE_DATA);
         CustomSoftAssert.addAttachmentToAllure("perf_log_" + testName, file.toPath());
         FileUtils.copyFile(file, new File(String.format("log location", "perf_log_") + testName + ".csv"));
@@ -588,16 +593,16 @@ public class AppiumCommands {
 
     public static File pullFile(String remotePath, String internalPath) {
         byte[] bytes = androidDriver().pullFile(remotePath);
-        Log.info("Downloaded file from %s", remotePath);
+        log.info("Downloaded file from {}", remotePath);
         return DataUtils.creteFileFromBytes(bytes, internalPath);
     }
 
     public static void pushFile(String remotePath, File file) {
         try {
             androidDriver().pushFile(remotePath, file);
-            Log.info("Pushed file to %s", remotePath);
+            log.info("Pushed file to {}", remotePath);
         } catch (Exception e) {
-            Log.warn("FAILED - unable to push the file %s", remotePath, e);
+            log.warn("FAILED - unable to push the file {}", remotePath, e);
         }
     }
 
@@ -632,7 +637,7 @@ public class AppiumCommands {
                 readableData.put((String) data.get(0).get(i), val);
             }
         } catch (Exception e) {
-            Log.warn("FAILED - unable to record performance info\n", e);
+            log.warn("FAILED - unable to record performance info\n", e);
         }
         return readableData;
     }
@@ -645,14 +650,14 @@ public class AppiumCommands {
             initialCPUKernelValue = Double.parseDouble(PERFORMANCE_DATA.get(1)[1]);
             initialMemoryValue = Double.parseDouble(PERFORMANCE_DATA.get(1)[2]);
         } catch (Exception e) {
-            Log.warn("FAILED - unable to read initial performance data\n%s", e);
+            log.warn("FAILED - unable to read initial performance data\n{}", e);
         }
         try {
             finalCPUUserValue = Double.parseDouble(PERFORMANCE_DATA.get(PERFORMANCE_DATA.size() - 1)[0]);
             finalCPUKernelValue = Double.parseDouble(PERFORMANCE_DATA.get(PERFORMANCE_DATA.size() - 1)[1]);
             finalMemoryValue = Double.parseDouble(PERFORMANCE_DATA.get(PERFORMANCE_DATA.size() - 1)[2]);
         } catch (Exception e) {
-            Log.warn("FAILED - unable to read final performance data\n%s", e);
+            log.warn("FAILED - unable to read final performance data\n{}", e);
         }
         if (initialCPUUserValue == 0.0) initialCPUUserValue = 1.0;
         if (initialCPUKernelValue == 0.0) initialCPUKernelValue = 1.0;
@@ -660,26 +665,26 @@ public class AppiumCommands {
         double increasedCPUUser = (finalCPUUserValue * 100) / initialCPUUserValue;
         double increasedCPUKernel = (finalCPUKernelValue * 100) / initialCPUKernelValue;
         double increasedMemory = (finalMemoryValue * 100) / initialMemoryValue;
-        Log.info("Increase rate -> CPU-User:%s percent, CPU-Kernel:%s percent, Memory:%s percent",
-                 trimDecimal(increasedCPUUser, 1), trimDecimal(increasedCPUKernel, 1),
-                 trimDecimal(increasedMemory, 1));
+        log.info("Increase rate -> CPU-User:{} percent, CPU-Kernel:{} percent, Memory:{} percent",
+                trimDecimal(increasedCPUUser, 1), trimDecimal(increasedCPUKernel, 1),
+                trimDecimal(increasedMemory, 1));
         if (increasedMemory >= 10.0) {
-            Log.warn("Initial memory value: %s, final memory value: %s",
-                     trimDecimal(initialMemoryValue, 1), trimDecimal(finalMemoryValue, 1));
-            Log.warn("Increased value: %s, memory increased more than on 10 percent",
-                     trimDecimal(increasedMemory, 1));
+            log.warn("Initial memory value: {}, final memory value: {}",
+                    trimDecimal(initialMemoryValue, 1), trimDecimal(finalMemoryValue, 1));
+            log.warn("Increased value: {}, memory increased more than on 10 percent",
+                    trimDecimal(increasedMemory, 1));
         }
         if (increasedCPUUser >= 20.0) {
-            Log.warn("Initial CPU-User value: %s, final CPU-User value: %s",
-                     trimDecimal(initialCPUUserValue, 1), trimDecimal(finalCPUUserValue, 1));
-            Log.warn("Increased value: %s, CPU-User increased more than on 10 percent",
-                     trimDecimal(increasedCPUUser));
+            log.warn("Initial CPU-User value: {}, final CPU-User value: {}",
+                    trimDecimal(initialCPUUserValue, 1), trimDecimal(finalCPUUserValue, 1));
+            log.warn("Increased value: {}, CPU-User increased more than on 10 percent",
+                    trimDecimal(increasedCPUUser));
         }
         if (increasedCPUKernel >= 20.0) {
-            Log.warn("Initial CPU-Kernel value: %s, final CPU-Kernel value: %s",
-                     trimDecimal(initialCPUKernelValue, 1), trimDecimal(finalCPUKernelValue, 1));
-            Log.warn("Increased value: %s, CPU-Kernel increased more than on 10 percent",
-                     trimDecimal(increasedCPUKernel, 1));
+            log.warn("Initial CPU-Kernel value: {}, final CPU-Kernel value: {}",
+                    trimDecimal(initialCPUKernelValue, 1), trimDecimal(finalCPUKernelValue, 1));
+            log.warn("Increased value: {}, CPU-Kernel increased more than on 10 percent",
+                    trimDecimal(increasedCPUKernel, 1));
         }
     }
 }

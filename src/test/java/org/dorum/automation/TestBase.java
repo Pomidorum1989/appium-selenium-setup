@@ -2,16 +2,17 @@ package org.dorum.automation;
 
 import com.github.automatedowl.tools.AllureEnvironmentWriter;
 import com.google.common.collect.ImmutableMap;
+import com.perfecto.reportium.client.ReportiumClient;
 import io.qameta.allure.Step;
 import lombok.SneakyThrows;
+import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.dorum.automation.common.consts.CapabilityName;
 import org.dorum.automation.common.driver.AbstractDriverManager;
 import org.dorum.automation.common.driver.DriverFactory;
 import org.dorum.automation.common.utils.*;
 import org.dorum.automation.common.utils.appium.AppiumCommands;
 import org.dorum.automation.common.utils.enums.ProjectConfig;
-import org.dorum.automation.common.utils.perfecto.*;
+import org.dorum.automation.perfecto.*;
 import org.testng.ITestContext;
 import org.testng.ITestResult;
 import org.testng.annotations.*;
@@ -22,16 +23,15 @@ import java.util.Objects;
 
 import static org.dorum.automation.common.utils.enums.AllureReportParameter.*;
 
+@Log4j2
 public class TestBase {
 
     protected CustomSoftAssert softAssert;
     // Services
 
     // Pages
-
-    // Log forms
-    private static final String SIGN_START = "<<==|| ";
-    private static final String SIGN_END = " ||==>>";
+    
+    
     // Local usage
     private static String testSuiteName;
     private static ImmutableMap.Builder<String, String> allureEnvVars;
@@ -70,8 +70,8 @@ public class TestBase {
 
 
     @Step("Step >> Get Allure Environment Variables")
-    protected void initBasicVarForAllureReport() {
-        Log.info("Getting Allure environment variables");
+    protected void initBasicVarForAllureReport(ReportiumClient client) {
+        log.info("Getting Allure environment variables");
         String deviceID, platformVersion, pdfReport, executionId;
         if (AbstractDriverManager.isAndroid()) {
             deviceID = AppiumCommands.getDesiredCapabilityValue(CapabilityName.DEVICE_NAME);
@@ -88,7 +88,7 @@ public class TestBase {
                 .put(APPLICATION_VERSION.getValue(), PerfectoAPI.artifactName)
                 .put(PERFECTO_SESSION_ID.getValue(), Objects.requireNonNull(AppiumCommands.getSessionId()))
                 .put(EXECUTION_ID.getValue(), executionId)
-                .put(PERFECTO_REPORT_LINK.getValue(), PerfectoReport.getReportUrl())
+                .put(PERFECTO_REPORT_LINK.getValue(), client.getReportUrl())
                 .put(PERFECTO_PDF_REPORT_LINK.getValue(), pdfReport)
                 .put(DEVICE_PLATFORM.getValue(), ConfigProperties.getProperty(ProjectConfig.DRIVER_NAME))
                 .put(DEVICE_MODEL.getValue(), PerfectoAPI.getDeviceParameter(deviceID, PerfectoDeviceParam.MODEL))
@@ -102,19 +102,19 @@ public class TestBase {
     @SafeVarargs
     @Step("Step >> Generate Device Information")
     public final void addAllureValueToReport(boolean save, ImmutablePair<String, String>... pair) {
-        Log.info("Generating device information");
+        log.info("Generating device information");
         try {
             for (ImmutablePair<String, String> immutablePair : pair) {
                 allureEnvVars.put(immutablePair.getKey(), immutablePair.getValue());
             }
             if (save) {
-                Log.info("----------------------- Allure environment variables ------------------------------");
-                allureEnvVars.build().forEach((key, value) -> Log.info("%s : %s", key, value));
+                log.info("----------------------- Allure environment variables start ------------------------------");
+                allureEnvVars.build().forEach((key, value) -> log.info("{} : {}", key, value));
                 AllureEnvironmentWriter.allureEnvironmentWriter(allureEnvVars.build());
-                Log.info("----------------------- Allure environment variables ------------------------------");
+                log.info("----------------------- Allure environment variables end ------------------------------");
             }
         } catch (Exception e) {
-            Log.warn(e.getMessage());
+            log.warn(e.getMessage());
         }
     }
 
@@ -125,10 +125,10 @@ public class TestBase {
     }
 
     private void initPages() {
-        Log.info("Common initializations of Page Objects (Pages)");
+        log.info("Common initializations of Page Objects (Pages)");
     }
 
-    //if default suite, @afterSuite won't generate report
+
     private String getTestSuiteName() {
         return Objects.requireNonNullElseGet(testSuiteName, () -> testSuiteName = "Default Suite");
     }

@@ -9,19 +9,20 @@ import io.appium.java_client.service.local.flags.GeneralServerFlag;
 import io.qameta.allure.Step;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
-import org.dorum.automation.common.consts.CapabilityName;
 import org.dorum.automation.common.utils.ConfigProperties;
-import org.dorum.automation.common.utils.Log;
 import org.dorum.automation.common.utils.enums.ProjectConfig;
-import org.dorum.automation.common.utils.perfecto.DriverCapabilities;
-import org.dorum.automation.common.utils.perfecto.PerfectoAPI;
+import org.dorum.automation.perfecto.CapabilityName;
+import org.dorum.automation.perfecto.DriverCapabilities;
+import org.dorum.automation.perfecto.PerfectoAPI;
 import org.openqa.selenium.MutableCapabilities;
 import org.openqa.selenium.remote.DesiredCapabilities;
 
 import java.util.concurrent.TimeUnit;
 
+@Log4j2
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class IosDriverManager extends AbstractDriverManager {
 
@@ -30,7 +31,7 @@ public class IosDriverManager extends AbstractDriverManager {
     @Override
     @Step("Step >> Create iOS Driver")
     protected IOSDriver<IOSElement> createDriver() {
-        Log.info("Initializing iOS driver");
+        log.info("Initializing iOS driver");
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
         IOSDriver<IOSElement> driver = null;
@@ -49,13 +50,13 @@ public class IosDriverManager extends AbstractDriverManager {
                 } else {
                     failure = "FAILED - initialize iOS driver (attempt %s)\n%s";
                 }
-                Log.warn(failure, counter, e);
+                log.warn(failure, counter, e);
                 if (counter == maxAttempts) {
-                    Log.exception(failure, counter, e);
+                    log.error(failure, counter, e);
                 }
             }
         }
-        Log.info("Driver initialization time: %s seconds", stopWatch.getTime(TimeUnit.SECONDS));
+        log.info("Driver initialization time: {} seconds", stopWatch.getTime(TimeUnit.SECONDS));
         stopWatch.stop();
         return driver;
     }
@@ -65,8 +66,7 @@ public class IosDriverManager extends AbstractDriverManager {
         DesiredCapabilities capabilities = new DesiredCapabilities();
         if (Boolean.parseBoolean(ConfigProperties.getProperty(ProjectConfig.PERFECTO_STATUS))) {
             capabilities = DriverCapabilities.perfectoIosCapabilities(true, true,
-                    true, 0, false, PerfectoAPI.getLatestBuildVersion(
-                            Boolean.parseBoolean(ConfigProperties.getProperty(ProjectConfig.IS_EXACT_VERSION))));
+                    true, 0, false, "", PerfectoAPI.getLatestBuildVersion(false));
         } else {
             capabilities.setCapability(MobileCapabilityType.DEVICE_NAME, "IPhone 11 Pro");
             capabilities.setCapability(MobileCapabilityType.UDID, ConfigProperties.getProperty(ProjectConfig.IOS_DEVICE_ID));
@@ -107,7 +107,7 @@ public class IosDriverManager extends AbstractDriverManager {
         service.clearOutPutStreams();
         service.start();
         if (service.isRunning()) {
-            Log.info("%s driver service is started", ConfigProperties.getProperty(ProjectConfig.DRIVER_NAME));
+            log.info("%s driver service is started", ConfigProperties.getProperty(ProjectConfig.DRIVER_NAME));
         }
         return service;
     }
@@ -115,7 +115,7 @@ public class IosDriverManager extends AbstractDriverManager {
     public void stopService() {
         if ((null != service) && service.isRunning()) {
             service.stop();
-            Log.info("Webdriver service for IOS is stopped");
+            log.info("Webdriver service for IOS is stopped");
         }
     }
 

@@ -4,19 +4,9 @@
           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <servers>
         <server>
-            <username>${env.NEXUS_USER}</username>
-            <password>${env.NEXUS_PASSWORD}</password>
+            <username>${env.USER}</username>
+            <password>${env.PASSWORD}</password>
             <id>java</id>
-        </server>
-        <server>
-            <username>${env.NEXUS_USER}</username>
-            <password>${env.NEXUS_PASSWORD}</password>
-            <id>java-release</id>
-        </server>
-        <server>
-            <username>${env.NEXUS_USER}</username>
-            <password>${env.NEXUS_PASSWORD}</password>
-            <id>java-snapshot</id>
         </server>
     </servers>
 
@@ -36,11 +26,15 @@
             <protocol>http</protocol>
             <host>proxy.com</host>
             <port>8080</port>
-            <nonProxyHosts></nonProxyHosts>
+<!--            <nonProxyHosts></nonProxyHosts>-->
         </proxy>
     </proxies>
+    <activeProfiles>
+        <activeProfile>artifactory</activeProfile>
+    </activeProfiles>
     <profiles>
         <profile>
+            <id>artifactory</id>
             <repositories>
                 <repository>
                 </repository>
@@ -49,10 +43,6 @@
                 <pluginRepository>
                 </pluginRepository>
             </pluginRepositories>
-            <id>artifactory</id>
         </profile>
     </profiles>
-    <activeProfiles>
-        <activeProfile>artifactory</activeProfile>
-    </activeProfiles>
 </settings>

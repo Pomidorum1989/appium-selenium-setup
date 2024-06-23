@@ -1,9 +1,10 @@
 package org.dorum.automation.common.utils.listeners;
 
-import org.dorum.automation.common.utils.Log;
+import lombok.extern.log4j.Log4j2;
 import org.testng.IRetryAnalyzer;
 import org.testng.ITestResult;
 
+@Log4j2
 public class Retry implements IRetryAnalyzer {
 
     private int retryCount = 0;
@@ -12,7 +13,8 @@ public class Retry implements IRetryAnalyzer {
         int maxRetryCount = 0;
         if (retryCount < maxRetryCount) {
             retryCount++;
-            return Log.info("Retry #%s for test: %s", retryCount, result.getMethod().getMethodName());
+            log.info("Retry #{} for test: {}", retryCount, result.getMethod().getMethodName());
+            return true;
         }
         return false;
     }

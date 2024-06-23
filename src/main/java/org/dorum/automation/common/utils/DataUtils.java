@@ -1,6 +1,9 @@
 package org.dorum.automation.common.utils;
 
+import groovy.util.logging.Log4j2;
 import lombok.SneakyThrows;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.*;
 import java.lang.reflect.Field;
@@ -10,7 +13,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
+@Log4j2
 public class DataUtils {
+
+    private static final Logger log = LogManager.getLogger(DataUtils.class);
 
     public static void saveTextToFile(String text) {
         FileWriter fileWriter;
@@ -22,7 +28,7 @@ public class DataUtils {
             bufferedWriter.newLine();
             bufferedWriter.close();
         } catch (Exception e) {
-            Log.warn("FAILED - save text to file\n%s", e);
+            log.warn("FAILED - save text to file\n%s", e);
         }
     }
 
@@ -31,7 +37,7 @@ public class DataUtils {
         BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(fileAddress, isAppend));
         bufferedWriter.write(fileContext + System.lineSeparator());
         bufferedWriter.close();
-        Log.info("Text information was added to the file: %s", fileAddress);
+        log.info("Text information was added to the file: {}", fileAddress);
     }
 
     @SneakyThrows
@@ -40,7 +46,7 @@ public class DataUtils {
         BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(file, false));
         bufferedWriter.write(fileContext + System.lineSeparator());
         bufferedWriter.close();
-        Log.info("Text information was added to the file");
+        log.info("Text information was added to the file");
         return file;
     }
 
@@ -51,7 +57,7 @@ public class DataUtils {
         pwOb.flush();
         pwOb.close();
         fwOb.close();
-        Log.info("File was cleared: %s", fileAddress);
+        log.info("File was cleared: {}", fileAddress);
     }
 
     @SneakyThrows
@@ -75,7 +81,7 @@ public class DataUtils {
                 }
             }
         } catch (Exception e) {
-          Log.info("", e);
+          log.info("", e);
         }
         return -1;
     }
@@ -85,7 +91,7 @@ public class DataUtils {
         try {
             externalClass = Class.forName(className);
         } catch (Exception e) {
-            Log.warn("FAILED - unable to find class\n%s", e);
+            log.warn("FAILED - unable to find class\n%s", e);
         }
         Field field = null;
         try {
@@ -93,9 +99,9 @@ public class DataUtils {
             field = externalClass.getDeclaredField(fieldName);
             field.setAccessible(true);
             field.set(null, value);
-            Log.simpleInfo(String.format( "Overwrite field %s to value %s", fieldName, value));
+            log.info("Overwrite field {} to value {}", fieldName, value);
         } catch (Exception e) {
-            Log.warn("FAILED - unable to find field %s\n%s", field, e);
+            log.warn("FAILED - unable to find field {}\n{}", field, e);
         }
     }
 
@@ -115,16 +121,16 @@ public class DataUtils {
         File file = new File(path);
         try (FileOutputStream fos = new FileOutputStream(file)) {
             fos.write(bytes);
-            Log.info("File is created in the location: %s", path);
+            log.info("File is created in the location: {}", path);
         } catch (Exception e) {
-            Log.warn("FAILED - unable to create the file: %s\n%s", path, e);
+            log.warn("FAILED - unable to create the file: {}\n{}", path, e);
         }
         return file;
     }
 
     @SneakyThrows
     public static void createLogFile(String fileName) {
-        Path path = Paths.get(String.format("", fileName));
+        Path path = Paths.get(fileName);
         if (!Files.exists(path)) {
             Files.createFile(path);
         }

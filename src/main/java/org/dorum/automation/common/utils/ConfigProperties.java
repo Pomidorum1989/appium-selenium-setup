@@ -1,11 +1,13 @@
 package org.dorum.automation.common.utils;
 
+import lombok.extern.log4j.Log4j2;
 import org.apache.commons.io.FileUtils;
 import org.dorum.automation.common.utils.enums.ProjectConfig;
 
 import java.nio.file.Path;
 import java.util.Properties;
 
+@Log4j2
 public class ConfigProperties {
 
     private static final Properties properties = new Properties();
@@ -19,7 +21,7 @@ public class ConfigProperties {
             }
             properties.load(FileUtils.class.getClassLoader().getResourceAsStream(fileName));
         } catch (Exception e) {
-            Log.exception("FAILED - load properties file\n%s", e);
+            log.error("FAILED - load properties file\n{}", e);
         }
     }
 
@@ -33,7 +35,7 @@ public class ConfigProperties {
             int position = DataUtils.findLineNumber(configPath.toAbsolutePath().toString(), configValue.getConfigName());
             DataUtils.overwriteLine(configPath, configValue.getConfigName() + "=" + value, position - 1);
         } catch (Exception e) {
-            Log.warn("Failed to replace %s property in config\n%s", configValue, e);
+            log.warn("Failed to replace %s property in config\n{}", configValue, e);
         }
     }
 }

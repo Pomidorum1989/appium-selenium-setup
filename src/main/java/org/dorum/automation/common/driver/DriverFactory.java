@@ -2,8 +2,8 @@ package org.dorum.automation.common.driver;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.dorum.automation.common.utils.ConfigProperties;
-import org.dorum.automation.common.utils.Log;
 import org.dorum.automation.common.utils.enums.ProjectConfig;
 import org.dorum.automation.common.utils.listeners.PerformanceEventListener;
 import org.openqa.selenium.Dimension;
@@ -12,6 +12,7 @@ import org.openqa.selenium.support.events.EventFiringWebDriver;
 
 import java.util.concurrent.TimeUnit;
 
+@Log4j2
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class DriverFactory {
 
@@ -20,50 +21,50 @@ public class DriverFactory {
 
     public static synchronized WebDriver getDriver() {
         if (driver.get() == null) {
-            Log.info("DriverFactory: creating WebDriver");
+            log.info("DriverFactory: creating WebDriver");
             try {
                 driver.set(createWebDriver());
                 driver.set(getWebDriverEventListener());
                 addWebDriverConfiguration(false);
                 WebDriverContainer.setDriver(driver.get());
             } catch (Exception e) {
-                Log.warn("FAILED - create Web Driver\n%s", e);
+                log.warn("FAILED - create Web Driver\n%s", e);
             }
         }
-        Log.info("DriverFactory: getting WebDriver");
+        log.info("DriverFactory: getting WebDriver");
         return driver.get();
     }
 
     private static EventFiringWebDriver getWebDriverEventListener() {
-        Log.info("Webdriver event listener is registered");
+        log.info("Web driver event listener is registered");
         return new EventFiringWebDriver(getDriver()).register(LISTENER);
     }
 
     public static void registerEventListener() {
         EventFiringWebDriver eventDriver = ((EventFiringWebDriver) WebDriverContainer.getDriver()).register(LISTENER);
         WebDriverContainer.setDriver(eventDriver);
-        Log.info("Webdriver event listener is enabled");
+        log.info("Web driver event listener is enabled");
     }
 
     public static void unRegisterEventListener() {
-        Log.info("DriverFactory: un-registering Event Listener");
+        log.info("DriverFactory: un-registering Event Listener");
         EventFiringWebDriver eventDriver = ((EventFiringWebDriver) WebDriverContainer.getDriver()).unregister(LISTENER);
         WebDriverContainer.setDriver(eventDriver);
-        Log.info("Webdriver event listener is disabled");
+        log.info("Web driver event listener is disabled");
     }
 
     public static synchronized void quitDriver() {
-        Log.info("DriverFactory: quit/close WebDriver");
+        log.info("DriverFactory: quit/close WebDriver");
         if (driver.get() != null) {
             try {
                 driver.get().quit();
                 driver.remove();
                 WebDriverContainer.removeDriver();
             } catch (Exception e) {
-                Log.warn("FAILED - quit WebDriver\n%s", e);
+                log.warn("FAILED - quit WebDriver\n%s", e);
             }
         } else {
-            Log.info("WebDriver is already closed");
+            log.info("WebDriver is already closed");
         }
     }
 
@@ -84,14 +85,14 @@ public class DriverFactory {
             driver.get().manage().timeouts().implicitlyWait(5000, TimeUnit.MILLISECONDS);
             driver.get().manage().timeouts().setScriptTimeout(10000, TimeUnit.MILLISECONDS);
             driver.get().manage().timeouts().pageLoadTimeout(20000, TimeUnit.MILLISECONDS);
-            Log.info("Driver configurations are set");
+            log.info("Driver configurations are set");
         }
     }
 
     public synchronized static void setBrowserSize() {
         String browserSize = ConfigProperties.getProperty(ProjectConfig.BROWSER_SIZE);
         if (browserSize != null && !Boolean.parseBoolean(ConfigProperties.getProperty(ProjectConfig.IS_MAXIMIZED))) {
-            Log.info("Set browser size to: %s", browserSize);
+            log.info("Set browser size to: {}", browserSize);
             String[] dimension = browserSize.split("x");
             int width = Integer.parseInt(dimension[0]);
             int height = Integer.parseInt(dimension[1]);

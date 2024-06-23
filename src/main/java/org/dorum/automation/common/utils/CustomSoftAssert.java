@@ -1,30 +1,30 @@
-package org.dorum.automation.common.utils.perfecto;
+package org.dorum.automation.common.utils;
 
-import com.epam.reportportal.listeners.LogLevel;
-import com.epam.reportportal.service.ReportPortal;
 import com.perfecto.reportium.client.ReportiumClient;
 import io.qameta.allure.Allure;
 import io.qameta.allure.Step;
 import lombok.NoArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
-import org.dorum.automation.common.consts.CapabilityName;
 import org.dorum.automation.common.driver.AbstractDriverManager;
-import org.dorum.automation.common.utils.DateUtils;
-import org.dorum.automation.common.utils.Log;
-import org.dorum.automation.common.utils.TextUtils;
 import org.dorum.automation.common.utils.appium.AppiumCommands;
+import org.dorum.automation.perfecto.CapabilityName;
 import org.testng.asserts.IAssert;
 import org.testng.asserts.SoftAssert;
 
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Calendar;
 
+@Log4j2
 @NoArgsConstructor
 public class CustomSoftAssert extends SoftAssert {
 
-    private static ReportiumClient client = PerfectoReport.REPORTIUM_CLIENT;
+    private ReportiumClient client;
+
+    public CustomSoftAssert(ReportiumClient client) {
+        this.client = client;
+    }
 
     @Override
     public void onAssertFailure(IAssert<?> assertCommand, AssertionError ex) {
@@ -33,27 +33,13 @@ public class CustomSoftAssert extends SoftAssert {
             screenshotName = "No error message provided";
         }
         storeScreenshot(screenshotName);
-        AppiumCommands.recordPerformanceData();
-        try {
-            if (client == null) {
-                client = PerfectoReport.getReportClientInstance();
-            }
-            client.reportiumAssert(ex.getMessage(), false);
-        } catch (Exception e) {
-            Log.warn("Perfecto report isn't initialized\n%s", e);
-        }
+//        AppiumCommands.recordPerformanceData();
+        client.reportiumAssert(ex.getMessage(), false);
     }
 
     @Override
     public void onAssertSuccess(IAssert<?> assertCommand) {
-        try {
-            if (client == null) {
-                client = PerfectoReport.getReportClientInstance();
-            }
-            client.reportiumAssert(assertCommand.getMessage(), true);
-        } catch (Exception e) {
-            Log.warn("Perfecto report isn't initialized\n%s", e);
-        }
+        client.reportiumAssert(assertCommand.getMessage(), true);
     }
 
     public static boolean storeScreenshotOnFail(String screenshotName) {
@@ -83,15 +69,9 @@ public class CustomSoftAssert extends SoftAssert {
     public static void addAttachmentToAllure(String attachmentName, Path attachment) {
         try {
             Allure.addAttachment(attachmentName, Files.newInputStream(attachment));
-            addAttachmentToReportPortal(attachmentName, attachment);
-            Log.info("Attachment is added to allure report with name: %s", attachmentName);
+            log.info("Attachment is added to allure report with name: {}", attachmentName);
         } catch (Exception e) {
-            Log.warn("FAILED - unable to attach attachment %s to RP/Allure report\n%s", attachmentName, e);
+            log.warn("FAILED - unable to attach attachment {} to RP/Allure report\n{}", attachmentName, e);
         }
-    }
-
-    public static void addAttachmentToReportPortal(String attachmentName, Path attachment) {
-        ReportPortal.emitLog(attachmentName, LogLevel.INFO.name(), Calendar.getInstance().getTime(), attachment.toFile());
-        Log.info("Attachment is added to Report Portal with name: %s", attachmentName);
     }
 }

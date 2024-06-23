@@ -5,6 +5,8 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.dorum.automation.common.utils.appium.AppiumCommands;
 
+import java.util.Objects;
+
 @Getter
 @AllArgsConstructor
 public enum MobileContext {
@@ -16,18 +18,4 @@ public enum MobileContext {
 
     private final String contextName, contextValue;
 
-    @Override
-    public String toString() {
-        return contextName;
-    }
-
-    public String getWebviewContent(MobilePlatform platform, TitleName titleName) {
-        if (platform.equals(MobilePlatform.IOS)) {;
-            return contextValue.replace("packageName", AppiumCommands.getIosWebviewContext(titleName));
-        } else {
-            return contextValue;
-        }
-
-
-    }
 }

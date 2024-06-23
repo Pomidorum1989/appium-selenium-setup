@@ -2,11 +2,12 @@ package org.dorum.automation.common.driver;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
-import org.dorum.automation.common.utils.Log;
+import lombok.extern.log4j.Log4j2;
 import org.openqa.selenium.WebDriver;
 import org.testng.collections.Maps;
 
 import java.util.Map;
+@Log4j2
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class WebDriverContainer {
@@ -30,7 +31,7 @@ public class WebDriverContainer {
     public static void removeDriver() {
         long threadId = Thread.currentThread().getId();
         threadWebDriver.remove(threadId);
-        Log.info("WebDriver with thread ID: %s - is removed", threadId);
+        log.info("WebDriver with thread ID: {} - is removed", threadId);
     }
 
     public static boolean hasWebDriverStarted() {

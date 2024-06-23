@@ -2,8 +2,8 @@ package org.dorum.automation.common.driver;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
-import org.dorum.automation.common.consts.CapabilityName;
-import org.dorum.automation.common.utils.Log;
+import lombok.extern.log4j.Log4j2;
+import org.dorum.automation.perfecto.CapabilityName;
 import org.openqa.selenium.MutableCapabilities;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
@@ -17,8 +17,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
 
-import static org.dorum.automation.common.consts.CapabilityName.*;
+import static org.dorum.automation.perfecto.CapabilityName.*;
 
+@Log4j2
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class ChromeDriverManager extends AbstractDriverManager {
 
@@ -38,7 +39,7 @@ public class ChromeDriverManager extends AbstractDriverManager {
             try {
                 chService = ChromeDriverService.createDefaultService();
             } catch (Exception e) {
-                Log.warn("FAILED - start Service\n%s", e);
+                log.warn("FAILED - start Service\n%s", e);
             }
         }
         return chService;
@@ -52,7 +53,7 @@ public class ChromeDriverManager extends AbstractDriverManager {
 
     @Override
     protected WebDriver createDriver() {
-        Log.info("Initializing Chrome Driver");
+        log.info("Initializing Chrome Driver");
         return new ChromeDriver((ChromeOptions) capabilities());
     }
 

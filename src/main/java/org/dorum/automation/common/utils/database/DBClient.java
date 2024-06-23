@@ -2,7 +2,7 @@ package org.dorum.automation.common.utils.database;
 
 import lombok.Getter;
 import lombok.SneakyThrows;
-import org.dorum.automation.common.utils.Log;
+import lombok.extern.log4j.Log4j2;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -12,6 +12,7 @@ import java.util.Objects;
 import java.util.Properties;
 
 @Getter
+@Log4j2
 public class DBClient {
 
     private static DBClient instance;
@@ -32,29 +33,28 @@ public class DBClient {
     public void closeDBConnection() {
         if (!Objects.requireNonNull(connection).isClosed()) {
             connection.close();
-            Log.info("DB connection is closed");
+            log.info("DB connection is closed");
         } else {
-            Log.warn("DB connection is already closed");
+            log.warn("DB connection is already closed");
         }
     }
 
     public int runCommand(String command) {
-        Log.info("Executing SQL query (schema: %s): %s", schema, command);
+        log.info("Executing SQL query (schema: {}): {}", schema, command);
         int rowsAffected  = 0;
         try {
             PreparedStatement preparedStatement = connection.prepareStatement(command);
             rowsAffected  = preparedStatement.executeUpdate();
-            Log.info("Updated: %s rows", rowsAffected );
+            log.info("Updated: {} rows", rowsAffected );
             preparedStatement.close();
         } catch (Exception e) {
-            e.printStackTrace();
-            Log.exception("FAILED - DB Utils run update command: %s\n%s", command, e);
+            log.error("FAILED - DB Utils run update command: {}\n{}", command, e);
         }
         return rowsAffected;
     }
 
     public int countResults(String command) {
-        Log.info("Executing SQL query (schema: %s): %s", schema, command);
+        log.info("Executing SQL query (schema: {}): {}", schema, command);
         int result = 0;
         try {
             PreparedStatement preparedStatement = connection.prepareStatement(command);
@@ -64,15 +64,15 @@ public class DBClient {
             }
             resultSet.close();
             preparedStatement.close();
-            Log.info("Count: %s", result);
+            log.info("Count: {}", result);
         } catch (Exception e) {
-            Log.exception("FAILED - DB Utils count results - %s\n%s", command, e);
+            log.error("FAILED - DB Utils count results - {}\n{}", command, e);
         }
         return result;
     }
 
     public String runSelectQuery(String command) {
-        Log.info("Executing SQL query (schema: %s): %s", schema, command);
+        log.info("Executing SQL query (schema: {}): {}", schema, command);
         String result = "";
         try {
             PreparedStatement preparedStatement = connection.prepareStatement(command);
@@ -80,11 +80,11 @@ public class DBClient {
             if (resultSet.next()) {
                 result = resultSet.getString(1);
             }
-            Log.info("Query result: %s", result);
+            log.info("Query result: {}", result);
             preparedStatement.close();
             resultSet.close();
         } catch (Exception e) {
-            Log.exception("FAILED - DB Utils run select query: %s\n%s", command, e);
+            log.error("FAILED - DB Utils run select query: {}\n{}", command, e);
         }
         return result;
     }
@@ -107,33 +107,33 @@ public class DBClient {
                 connection.setSchema(schema);
                 connection.setClientInfo("ApplicationName", "");
                 if (instance == null) {
-                    Log.info("---------------------------- DATA BASE Info (Start) ----------------------------");
-                    Log.info("Connection timeout: %s ms" ,connection.getNetworkTimeout());
-                    Log.info("Driver name: %s", connection.getMetaData().getDriverName());
-                    Log.info("Application name: %s", connection.getClientInfo().getProperty("ApplicationName"));
-                    Log.info("Catalog term: %s", connection.getMetaData().getCatalogTerm());
-                    Log.info("Driver version: %s", connection.getMetaData().getDriverVersion());
-                    Log.info("Driver major version: %s", connection.getMetaData().getDriverMajorVersion());
-                    Log.info("Driver minor version: %s", connection.getMetaData().getDriverMinorVersion());
-                    Log.info("Driver max connections: %s", connection.getMetaData().getMaxConnections());
-                    Log.info("DB username: %s", connection.getMetaData().getUserName());
-                    Log.info("DB URL: %s", connection.getMetaData().getURL());
-                    Log.info("DB Schema: %s", schema);
-                    Log.info("DB Catalog: %s", connection.getCatalog());
-                    Log.info("DB Product name: %s", connection.getMetaData().getDatabaseProductName());
-                    Log.info("DB Product version: %s", connection.getMetaData().getDatabaseProductVersion());
-                    Log.info("DB Product major version: %s", connection.getMetaData().getDatabaseMajorVersion());
-                    Log.info("DB Product minor version: %s", connection.getMetaData().getDatabaseMinorVersion());
-                    Log.info("---------------------------- DATA BASE Info (End) ------------------------------");
+                    log.info("---------------------------- DATA BASE Info (Start) ----------------------------");
+                    log.info("Connection timeout: {} ms" ,connection.getNetworkTimeout());
+                    log.info("Driver name: {}", connection.getMetaData().getDriverName());
+                    log.info("Application name: {}", connection.getClientInfo().getProperty("ApplicationName"));
+                    log.info("Catalog term: {}", connection.getMetaData().getCatalogTerm());
+                    log.info("Driver version: {}", connection.getMetaData().getDriverVersion());
+                    log.info("Driver major version: {}", connection.getMetaData().getDriverMajorVersion());
+                    log.info("Driver minor version: {}", connection.getMetaData().getDriverMinorVersion());
+                    log.info("Driver max connections: {}", connection.getMetaData().getMaxConnections());
+                    log.info("DB username: {}", connection.getMetaData().getUserName());
+                    log.info("DB URL: {}", connection.getMetaData().getURL());
+                    log.info("DB Schema: {}", schema);
+                    log.info("DB Catalog: {}", connection.getCatalog());
+                    log.info("DB Product name: {}", connection.getMetaData().getDatabaseProductName());
+                    log.info("DB Product version: {}", connection.getMetaData().getDatabaseProductVersion());
+                    log.info("DB Product major version: {}", connection.getMetaData().getDatabaseMajorVersion());
+                    log.info("DB Product minor version: {}", connection.getMetaData().getDatabaseMinorVersion());
+                    log.info("---------------------------- DATA BASE Info (End) ------------------------------");
                 }
                 break;
             } catch (Exception e) {
                 attempt++;
-                Log.warn("FAILED - DB Utils initialization\n%s", e);
+                log.warn("FAILED - DB Utils initialization\n{}", e);
             }
         }
         if (attempt == 2) {
-            Log.exception("FAILED - DB Utils initialization");
+            log.error("FAILED - DB Utils initialization");
         }
     }
 }

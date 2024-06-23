@@ -1,12 +1,15 @@
 package org.dorum.automation.common.utils;
 
+import lombok.extern.log4j.Log4j2;
+
 import java.text.DecimalFormat;
 
+@Log4j2
 public class MathUtils {
 
     public static int countDelta(int before, int after) {
         int delta = after - before;
-        Log.info("Delta is: %s", delta);
+        log.info("Delta is: {}", delta);
         return Math.abs(delta);
     }
 
@@ -22,7 +25,7 @@ public class MathUtils {
         try {
             trimmedNumber = decimalFormat.format(module);
         } catch (Exception e) {
-            Log.warn("FAILED - unable to trim the number %s\n%s", number, e);
+            log.warn("FAILED - unable to trim the number {}\n{}", number, e);
         }
         if (number < 0) {
             trimmedNumber = "-" + trimmedNumber;

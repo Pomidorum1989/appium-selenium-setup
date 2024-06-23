@@ -11,6 +11,5 @@ public enum AppActivity {
     BLUETOOTH_ACTIVITY          ("android.settings.BLUETOOTH_SETTINGS"),
     CHROME_ACTIVITY             ("com.google.android.apps.chrome.Main");
 
-
     private final String value;
 }

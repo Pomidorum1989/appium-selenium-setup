@@ -1,11 +1,14 @@
 package org.dorum.automation.common.utils;
 
+import lombok.extern.log4j.Log4j2;
+
 import java.text.SimpleDateFormat;
 import java.time.*;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.Locale;
 
+@Log4j2
 public class DateUtils {
 
     public static final String PATTERN_YMD_HMS_S = "yyyy-MM-dd_HH-mm-ss-SSS";
@@ -14,18 +17,19 @@ public class DateUtils {
     public static final String PATTERN_MD_HM = "MMddHHmm";
     public static final String PATTERN_HM = "H'hr' mm'min'";
     public static final String PATTERN_M = "mm'min'";
+    public static final String FORMATTED_DATE_MESSAGE = "Making formatted date, based on pattern: {}";
 
     public static String getFormattedDateAsString() {
         return getFormattedDateAsString(PATTERN_YMD_HMS_S);
     }
 
     public static String getFormattedDateAsString(String pattern) {
-        Log.debug("Making formatted date, based on pattern: %s", pattern);
+        log.debug(FORMATTED_DATE_MESSAGE, pattern);
         return new SimpleDateFormat(pattern, Locale.getDefault()).format(new Date());
     }
 
     public static String getFormattedDateAsString(String pattern, Date date) {
-        Log.debug("Making formatted date, based on pattern: %s", pattern);
+        log.debug(FORMATTED_DATE_MESSAGE, pattern);
         return new SimpleDateFormat(pattern, Locale.getDefault()).format(date);
     }
 
@@ -38,7 +42,7 @@ public class DateUtils {
                 date = new SimpleDateFormat(pattern).parse(text);
                 break;
             } catch (Exception e) {
-                Log.warn("FAILED - unable to parse string to date with pattern: %s\n%s", pattern, e);
+                log.warn("FAILED - unable to parse string to date with pattern: {}\n{}", pattern, e);
                 pattern = PATTERN_M;
                 attempt++;
             }
